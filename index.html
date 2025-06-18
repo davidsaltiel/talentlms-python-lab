@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Python IDE</title>
+
+    <!-- CodeMirror core & Python mode -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+
+    <!-- Optional: CodeMirror theme (monokai) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css" />
+
+    <!-- Pyodide (Python‑in‑Wasm) -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 1rem;
+        background: #f5f5f5;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+      }
+      #editor-wrapper {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      #editor {
+        height: 300px;
+      }
+      #run {
+        margin-top: 0.75rem;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background: #0070f3;
+        color: #ffffff;
+      }
+      #output {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #1e1e1e;
+        color: #ffffff;
+        min-height: 120px;
+        white-space: pre-wrap;
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Mini Python IDE</h1>
+
+    <div id="editor-wrapper">
+      <textarea id="editor"></textarea>
+    </div>
+
+    <button id="run">Run ▶</button>
+
+    <h2>Output</h2>
+    <div id="output"></div>
+
+    <script>
+      // Initialize CodeMirror editor
+      const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+        mode: "python",
+        theme: "monokai", // remove this line to use default light theme
+        lineNumbers: true,
+        indentUnit: 4,
+        tabSize: 4,
+        autofocus: true,
+      });
+
+      // Sample starting code
+      editor.setValue('print("Hello, TalentLMS!")');
+
+      // Capture stdout & stderr from Python and redirect to the page
+      const outputEl = document.getElementById("output");
+      function write(...args) {
+        outputEl.textContent += args.join(" ") + "\n";
+      }
+
+      // Load Pyodide asynchronously once, at page load
+      let pyodideReady = loadPyodide({ stdout: write, stderr: write });
+
+      // Run button handler
+      document.getElementById("run").addEventListener("click", async () => {
+        const pyodide = await pyodideReady; // wait until Pyodide loaded
+        outputEl.textContent = ""; // clear previous output
+        try {
+          const result = await pyodide.runPythonAsync(editor.getValue());
+          // If Python expression produced a result, show it explicitly
+          if (result !== undefined) {
+            write(result);
+          }
+        } catch (err) {
+          write(err);
+        }
+      });
+    </script>
+  </body>
+</html>
