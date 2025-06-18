@@ -1,132 +1,198 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mini Python IDE – NumPy & Pandas ready</title>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python Trader Toolbox – Notebook interactif</title>
 
-    <!-- CodeMirror core & Python mode -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <!-- CodeMirror -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css" />
 
-    <!-- Optional: CodeMirror dark theme -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css"
-    />
+  <!-- Pyodide -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
 
-    <!-- Pyodide (Python‑in‑Wasm) -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:system-ui,sans-serif;margin:0;padding:1rem;background:#f5f5f5}
+    h1{font-size:1.3rem;margin:0 0 .5rem}
+    select{padding:.4rem .6rem;margin-bottom:.5rem;border-radius:6px}
+    #editor-wrapper{border:1px solid #ccc;border-radius:8px;overflow:hidden}
+    #editor{height:340px}
+    #run{margin-top:.75rem;padding:.5rem 1rem;font-size:1rem;border:none;border-radius:6px;cursor:pointer;background:#0070f3;color:#fff}
+    #output{margin-top:1rem;padding:1rem;background:#1e1e1e;color:#fff;min-height:160px;border-radius:6px;white-space:pre-wrap;font-family:ui-monospace,monospace}
+  </style>
+</head>
 
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        margin: 0;
-        padding: 1rem;
-        background: #f5f5f5;
-      }
-      h1 {
-        font-size: 1.4rem;
-        margin-bottom: 0.5rem;
-      }
-      #editor-wrapper {
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      #editor {
-        height: 320px;
-      }
-      #run {
-        margin-top: 0.75rem;
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        background: #0070f3;
-        color: #ffffff;
-      }
-      #output {
-        margin-top: 1rem;
-        padding: 1rem;
-        background: #1e1e1e;
-        color: #ffffff;
-        min-height: 140px;
-        white-space: pre-wrap;
-        border-radius: 6px;
-        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Mini Python IDE <small>(NumPy & Pandas ready)</small></h1>
+<body>
+  <h1>Python Trader Toolbox <small>(Module A5)</small></h1>
 
-    <div id="editor-wrapper">
-      <textarea id="editor"></textarea>
-    </div>
+  <!-- Notebook selector -->
+  <label for="nb-select"><strong>Choisir un notebook :</strong></label>
+  <select id="nb-select">
+    <option value="intro">1 – Pandas & NumPy warm-up</option>
+    <option value="zc">2 – Zero-Coupon pricing</option>
+    <option value="delta">3 – Delta-Hedge demo</option>
+  </select>
 
-    <button id="run">Run ▶</button>
+  <!-- Code editor -->
+  <div id="editor-wrapper"><textarea id="editor"></textarea></div>
+  <button id="run">Run ▶</button>
 
-    <h2>Output</h2>
-    <div id="output"></div>
+  <h2>Output</h2>
+  <div id="output"></div>
 
-    <script>
-      ////////////////////////////////////////////////////////////////
-      // 1️⃣ Initialize CodeMirror
-      ////////////////////////////////////////////////////////////////
-      const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
-        mode: "python",
-        theme: "monokai",
-        lineNumbers: true,
-        indentUnit: 4,
-        tabSize: 4,
-        autofocus: true,
-      });
+<script>
+////////////////////////////////////////////////////////////////
+// 📚  Notebooks content
+////////////////////////////////////////////////////////////////
+const notebooks = {
+  intro: `# Notebook 1 — Pandas & NumPy warm-up
+import pandas as pd, numpy as np
 
-      // Default snippet that demonstrates pandas
-      editor.setValue(`import pandas as pd\nimport numpy as np\n\n# Create a tiny DataFrame\ndf = pd.DataFrame({\n    "A": np.arange(1, 6),\n    "B": np.random.randn(5),\n})\nprint(df)\n`);
+prices = pd.Series(
+    [101, 103, 102, 105, 107, 110],
+    index=pd.date_range("2025-01-01", periods=6, freq="D"),
+    name="S&P 500 ETF"
+)
+print("=== Prix bruts ===")
+print(prices, end="\\n\\n")
 
-      ////////////////////////////////////////////////////////////////
-      // 2️⃣ Capture stdout / stderr to the #output div
-      ////////////////////////////////////////////////////////////////
-      const outputEl = document.getElementById("output");
-      function write(...args) {
-        outputEl.textContent += args.join(" ") + "\n";
-      }
+log_ret = np.log(prices / prices.shift(1)).dropna()
+print("=== Rendements logs ===")
+print(log_ret, end="\\n\\n")
 
-      ////////////////////////////////////////////////////////////////
-      // 3️⃣ Load Pyodide *and* the extra Python packages only once
-      ////////////////////////////////////////////////////////////////
-      const pyodideReady = (async () => {
-        write("⌛ Downloading Python runtime & packages (numpy, pandas)…");
-        const py = await loadPyodide({ stdout: write, stderr: write });
+vol_annual = log_ret.std() * np.sqrt(252)
+print(f"Vol annualisée : {vol_annual:.2%}")`,
 
-        // Load scientific packages – first run only (cached afterwards)
-        await py.loadPackage(["numpy", "pandas"]);
-        write("✅ NumPy & Pandas are ready!\n———————");
-        return py;
-      })();
+  zc: `# Notebook 2 — Zero-Coupon pricing
+import numpy as np, pandas as pd
 
-      ////////////////////////////////////////////////////////////////
-      // 4️⃣ Run button handler
-      ////////////////////////////////////////////////////////////////
-      document.getElementById("run").addEventListener("click", async () => {
-        const py = await pyodideReady; // ensure runtime & packages loaded
-        outputEl.textContent = ""; // clear previous output
-        try {
-          const result = await py.runPythonAsync(editor.getValue());
-          if (result !== undefined) {
-            write(result);
-          }
-        } catch (err) {
-          write(err);
-        }
-      });
-    </script>
-  </body>
+def price_zc(yield_rate, T, cont=True):
+    """
+    yield_rate : taux % (ex : 0.03 pour 3 %)
+    T : maturité en années
+    cont : True = taux continu, False = taux simple
+    """
+    if cont:
+        return np.exp(-yield_rate * T)
+    return 1 / (1 + yield_rate * T)
+
+curve = pd.Series(
+    [0.03, 0.032, 0.035, 0.037],
+    index=[1, 2, 5, 10],  # maturités en années
+    name="Zero-rates"
+)
+
+print("=== Courbe zero-rates ===")
+print(curve, end="\\n\\n")
+
+prices = curve.apply(lambda y: price_zc(y, curve.index[curve == y][0]))
+print("=== Prix zero-coupon ===")
+print(prices)`,
+
+  delta: `# Notebook 3 — Delta-hedge demo (Black-Scholes)
+import numpy as np, math, pandas as pd
+from scipy.stats import norm
+
+def bs_price(S, K, r, sigma, T, cp='C'):
+    d1 = (math.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*math.sqrt(T))
+    d2 = d1 - sigma*math.sqrt(T)
+    if cp == 'C':
+        return S*norm.cdf(d1) - K*math.exp(-r*T)*norm.cdf(d2)
+    else:
+        return K*math.exp(-r*T)*norm.cdf(-d2) - S*norm.cdf(-d1)
+
+def bs_delta(S, K, r, sigma, T, cp='C'):
+    d1 = (math.log(S/K) + (r + 0.5*sigma**2)*T) / (sigma*math.sqrt(T))
+    return norm.cdf(d1) if cp == 'C' else -norm.cdf(-d1)
+
+# Paramètres
+S0, K, r, sigma, T = 100, 100, 0.02, 0.25, 0.5
+np.random.seed(42)
+
+# Trajectoire simulée du sous-jacent
+n_steps = 50
+dt = T / n_steps
+steps = np.random.normal((r - 0.5*sigma**2)*dt, sigma*math.sqrt(dt), n_steps)
+S_path = [S0]
+for eps in steps:
+    S_path.append(S_path[-1] * math.exp(eps))
+
+# Hedging
+cash = 0
+delta_prev = 0
+pnls = []
+for t, S in enumerate(S_path[:-1]):
+    tau = T - t*dt
+    delta_new = bs_delta(S, K, r, sigma, tau)
+    cash -= (delta_new - delta_prev) * S   # achat/vente du sous-jacent
+    cash *= math.exp(r*dt)                 # rémunération au taux sans risque
+    option_val = bs_price(S, K, r, sigma, tau)
+    portfolio = option_val - delta_new * S + cash
+    pnls.append(portfolio)
+    delta_prev = delta_new
+
+print(f"PNL final du hedge : {pnls[-1]:.4f}")
+print("Évolution du PNL (5 premières valeurs) :", pnls[:5])`
+};
+
+////////////////////////////////////////////////////////////////
+// 1️⃣  CodeMirror
+////////////////////////////////////////////////////////////////
+const editor = CodeMirror.fromTextArea(
+  document.getElementById("editor"), {
+    mode: "python",
+    theme: "monokai",
+    lineNumbers: true,
+    indentUnit: 4,
+    tabSize: 4,
+  }
+);
+
+// Charge notebook par défaut
+editor.setValue(notebooks.intro);
+
+document.getElementById("nb-select").addEventListener("change", (e) => {
+  editor.setValue(notebooks[e.target.value]);
+});
+
+////////////////////////////////////////////////////////////////
+// 2️⃣  Console output helpers
+////////////////////////////////////////////////////////////////
+const outputEl = document.getElementById("output");
+function write(...args) {
+  outputEl.textContent += args.join(" ") + "\\n";
+}
+
+////////////////////////////////////////////////////////////////
+// 3️⃣  Pyodide init (NumPy + Pandas + SciPy)
+////////////////////////////////////////////////////////////////
+const pyodideReady = (async () => {
+  write("⌛ Téléchargement de Python, NumPy, Pandas, SciPy…");
+  const py = await loadPyodide({ stdout: write, stderr: write });
+  await py.loadPackage(["numpy", "pandas", "scipy"]);
+  write("✅ Environnement prêt \\n————————");
+  return py;
+})();
+
+////////////////////////////////////////////////////////////////
+// 4️⃣  Run button
+////////////////////////////////////////////////////////////////
+document.getElementById("run").addEventListener("click", async () => {
+  const py = await pyodideReady;
+  outputEl.textContent = ""; // reset console
+  try {
+    const result = await py.runPythonAsync(editor.getValue());
+    if (result !== undefined) write(result);
+  } catch (err) {
+    write(err);
+  }
+});
+</script>
+</body>
 </html>
