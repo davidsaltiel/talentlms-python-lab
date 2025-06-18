@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Python IDE</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Python IDE – NumPy & Pandas ready</title>
 
     <!-- CodeMirror core & Python mode -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
 
-    <!-- Optional: CodeMirror theme (monokai) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css" />
+    <!-- Optional: CodeMirror dark theme -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css"
+    />
 
     <!-- Pyodide (Python‑in‑Wasm) -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
@@ -33,7 +39,7 @@
         overflow: hidden;
       }
       #editor {
-        height: 300px;
+        height: 320px;
       }
       #run {
         margin-top: 0.75rem;
@@ -50,7 +56,7 @@
         padding: 1rem;
         background: #1e1e1e;
         color: #ffffff;
-        min-height: 120px;
+        min-height: 140px;
         white-space: pre-wrap;
         border-radius: 6px;
         font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
@@ -58,7 +64,7 @@
     </style>
   </head>
   <body>
-    <h1>Mini Python IDE</h1>
+    <h1>Mini Python IDE <small>(NumPy & Pandas ready)</small></h1>
 
     <div id="editor-wrapper">
       <textarea id="editor"></textarea>
@@ -70,35 +76,50 @@
     <div id="output"></div>
 
     <script>
-      // Initialize CodeMirror editor
+      ////////////////////////////////////////////////////////////////
+      // 1️⃣ Initialize CodeMirror
+      ////////////////////////////////////////////////////////////////
       const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
         mode: "python",
-        theme: "monokai", // remove this line to use default light theme
+        theme: "monokai",
         lineNumbers: true,
         indentUnit: 4,
         tabSize: 4,
         autofocus: true,
       });
 
-      // Sample starting code
-      editor.setValue('print("Hello, TalentLMS!")');
+      // Default snippet that demonstrates pandas
+      editor.setValue(`import pandas as pd\nimport numpy as np\n\n# Create a tiny DataFrame\ndf = pd.DataFrame({\n    "A": np.arange(1, 6),\n    "B": np.random.randn(5),\n})\nprint(df)\n`);
 
-      // Capture stdout & stderr from Python and redirect to the page
+      ////////////////////////////////////////////////////////////////
+      // 2️⃣ Capture stdout / stderr to the #output div
+      ////////////////////////////////////////////////////////////////
       const outputEl = document.getElementById("output");
       function write(...args) {
         outputEl.textContent += args.join(" ") + "\n";
       }
 
-      // Load Pyodide asynchronously once, at page load
-      let pyodideReady = loadPyodide({ stdout: write, stderr: write });
+      ////////////////////////////////////////////////////////////////
+      // 3️⃣ Load Pyodide *and* the extra Python packages only once
+      ////////////////////////////////////////////////////////////////
+      const pyodideReady = (async () => {
+        write("⌛ Downloading Python runtime & packages (numpy, pandas)…");
+        const py = await loadPyodide({ stdout: write, stderr: write });
 
-      // Run button handler
+        // Load scientific packages – first run only (cached afterwards)
+        await py.loadPackage(["numpy", "pandas"]);
+        write("✅ NumPy & Pandas are ready!\n———————");
+        return py;
+      })();
+
+      ////////////////////////////////////////////////////////////////
+      // 4️⃣ Run button handler
+      ////////////////////////////////////////////////////////////////
       document.getElementById("run").addEventListener("click", async () => {
-        const pyodide = await pyodideReady; // wait until Pyodide loaded
+        const py = await pyodideReady; // ensure runtime & packages loaded
         outputEl.textContent = ""; // clear previous output
         try {
-          const result = await pyodide.runPythonAsync(editor.getValue());
-          // If Python expression produced a result, show it explicitly
+          const result = await py.runPythonAsync(editor.getValue());
           if (result !== undefined) {
             write(result);
           }
